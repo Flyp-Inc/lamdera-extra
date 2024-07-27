@@ -1,7 +1,7 @@
 module Backend exposing (..)
 
 import Html
-import Lamdera exposing (ClientId, SessionId)
+import Lamdera
 import Types exposing (..)
 
 
@@ -32,7 +32,7 @@ update msg model =
             ( model, Cmd.none )
 
 
-updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
+updateFromFrontend : Lamdera.SessionId -> Lamdera.ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontend sessionId clientId msg model =
     case msg of
         NoOpToBackend ->

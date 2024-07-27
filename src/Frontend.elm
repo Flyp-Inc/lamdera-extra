@@ -1,7 +1,7 @@
 module Frontend exposing (..)
 
-import Browser exposing (UrlRequest(..))
-import Browser.Navigation as Nav
+import Browser
+import Browser.Navigation
 import Html
 import Html.Attributes as Attr
 import Lamdera
@@ -25,7 +25,7 @@ app =
         }
 
 
-init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
+init : Url.Url -> Browser.Navigation.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
@@ -39,14 +39,14 @@ update msg model =
     case msg of
         UrlClicked urlRequest ->
             case urlRequest of
-                Internal url ->
+                Browser.Internal url ->
                     ( model
-                    , Nav.pushUrl model.key (Url.toString url)
+                    , Browser.Navigation.pushUrl model.key (Url.toString url)
                     )
 
-                External url ->
+                Browser.External url ->
                     ( model
-                    , Nav.load url
+                    , Browser.Navigation.load url
                     )
 
         UrlChanged url ->
