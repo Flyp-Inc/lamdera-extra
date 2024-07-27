@@ -2,6 +2,7 @@ module Types exposing (..)
 
 import Browser
 import Browser.Navigation
+import Time
 import Url
 
 
@@ -26,7 +27,11 @@ type ToBackend
     = NoOpToBackend
 
 
-type BackendMsg
+type alias BackendMsg =
+    ( BackendMessage, Maybe Time.Posix )
+
+
+type BackendMessage
     = NoOpBackendMsg
 
 
