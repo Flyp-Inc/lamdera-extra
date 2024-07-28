@@ -38,8 +38,8 @@ toList =
 
 
 fromList : List ClientId -> ClientSet
-fromList =
-    List.map .value >> Set.fromList
+fromList clientIds =
+    List.map .value clientIds |> Set.fromList
 
 
 member : ClientId -> ClientSet -> Bool

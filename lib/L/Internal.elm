@@ -145,7 +145,7 @@ backend params =
                 case maybeTimestamp of
                     Nothing ->
                         ( model
-                        , Task.perform (Just >> Tuple.pair msg) Time.now
+                        , Task.perform (\timestamp -> Just timestamp |> Tuple.pair msg) Time.now
                         )
 
                     Just timestamp ->
@@ -171,8 +171,9 @@ type alias ClientSet =
 
 
 toListClientSet : ClientSet -> List ClientId
-toListClientSet =
-    Set.toList >> List.map newClientId
+toListClientSet clientSet =
+    Set.toList clientSet
+        |> List.map newClientId
 
 
 mapClientSet : (ClientId -> a) -> ClientSet -> List a
