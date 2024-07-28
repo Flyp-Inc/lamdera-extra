@@ -28,10 +28,10 @@ type ToBackend
 
 
 type alias BackendMsg =
-    ( BackendMessage, Maybe Time.Posix )
+    ( Bsg, Maybe Time.Posix )
 
 
-type BackendMessage
+type Bsg
     = NoOpBackendMsg
 
 

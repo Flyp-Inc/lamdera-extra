@@ -52,21 +52,21 @@ app =
         }
 
 
-init : ( Model, Cmd BackendMessage )
+init : ( Model, Cmd Bsg )
 init =
     ( { message = "Hello!" }
     , Cmd.none
     )
 
 
-update : Time.Posix -> BackendMessage -> Model -> ( Model, Cmd BackendMessage )
+update : Time.Posix -> Bsg -> Model -> ( Model, Cmd Bsg )
 update timestamp msg model =
     case msg of
         NoOpBackendMsg ->
             ( model, Cmd.none )
 
 
-updateFromFrontend : Lamdera.SessionId -> Lamdera.ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMessage )
+updateFromFrontend : Lamdera.SessionId -> Lamdera.ClientId -> ToBackend -> Model -> ( Model, Cmd Bsg )
 updateFromFrontend sessionId clientId msg model =
     case msg of
         NoOpToBackend ->

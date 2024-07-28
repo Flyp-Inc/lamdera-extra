@@ -7,12 +7,6 @@ import Time
 import Url
 
 
-type alias IO =
-    { timestamp : Time.Posix
-    , seed : Random.Seed
-    }
-
-
 type alias SessionId =
     L.Internal.SessionId
 
