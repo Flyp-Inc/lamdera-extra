@@ -28,7 +28,7 @@ app =
 init : Url.Url -> Browser.Navigation.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
-      , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
+      , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation, with some added topspin from an unhinged community member."
       }
     , Cmd.none
     )
@@ -67,13 +67,26 @@ view : Model -> Browser.Document FrontendMsg
 view model =
     { title = ""
     , body =
-        [ Html.div [ Attr.style "text-align" "center", Attr.style "padding-top" "40px" ]
+        [ Html.div
+            [ Attr.style "font-family" "sans-serif"
+            , Attr.style "text-align" "center"
+            , Attr.style "padding-top" "40px"
+            ]
             [ Html.img [ Attr.src "https://lamdera.app/lamdera-logo-black.png", Attr.width 150 ] []
             , Html.div
-                [ Attr.style "font-family" "sans-serif"
-                , Attr.style "padding-top" "40px"
+                [ Attr.style "padding-top" "40px"
                 ]
                 [ Html.text model.message ]
+            , Html.div
+                [ Attr.style "font-family" "sans-serif"
+                ]
+                [ Html.p []
+                    [ Html.text "Submodule this repo into your project, then add the "
+                    , Html.code [] [ Html.text "lib/ " ]
+                    , Html.text "folder to your Lamdera project's "
+                    , Html.code [] [ Html.text "elm.json" ]
+                    ]
+                ]
             ]
         ]
     }
