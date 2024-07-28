@@ -23,6 +23,7 @@ import Browser.Navigation
 import Dict
 import Lamdera
 import Set
+import Task
 import Time
 import Url
 
@@ -131,6 +132,74 @@ backend { init, update, updateFromFrontend, subscriptions } =
                     (newSessionId sessionId)
                     (newClientId clientId)
         , subscriptions = subscriptions
+        }
+
+
+type alias BackendProgram_ backendModel toBackend bsg =
+    { init : ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
+    , subscriptions : backendModel -> Sub ( bsg, Maybe Time.Posix )
+    , update :
+        ( bsg, Maybe Time.Posix )
+        -> backendModel
+        -> ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
+    , updateFromFrontend :
+        Lamdera.SessionId
+        -> Lamdera.ClientId
+        -> toBackend
+        -> backendModel
+        -> ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
+    }
+
+
+backend_ :
+    { init : ( backendModel, Cmd bsg )
+    , update : Time.Posix -> bsg -> backendModel -> ( backendModel, Cmd bsg )
+    , updateFromFrontend : SessionId -> ClientId -> toBackend -> backendModel -> ( backendModel, Cmd bsg )
+    , subscriptions : backendModel -> Sub bsg
+    }
+    ->
+        { init : ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
+        , subscriptions : backendModel -> Sub ( bsg, Maybe Time.Posix )
+        , update :
+            ( bsg, Maybe Time.Posix )
+            -> backendModel
+            -> ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
+        , updateFromFrontend :
+            Lamdera.SessionId
+            -> Lamdera.ClientId
+            -> toBackend
+            -> backendModel
+            -> ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
+        }
+backend_ params =
+    let
+        mapCmd : ( model, Cmd msg ) -> ( model, Cmd ( msg, Maybe Time.Posix ) )
+        mapCmd ( model, cmdMsg ) =
+            ( model
+            , Cmd.map (\msg_ -> Tuple.pair msg_ Nothing) cmdMsg
+            )
+    in
+    Lamdera.backend
+        { init = mapCmd params.init
+        , update =
+            \( msg, maybeTimestamp ) model ->
+                case maybeTimestamp of
+                    Nothing ->
+                        ( model
+                        , Task.perform (Just >> Tuple.pair msg) Time.now
+                        )
+
+                    Just timestamp ->
+                        params.update timestamp msg model
+                            |> mapCmd
+        , updateFromFrontend =
+            \sessionId clientId toBackend model ->
+                params.updateFromFrontend (newSessionId sessionId) (newClientId clientId) toBackend model
+                    |> mapCmd
+        , subscriptions =
+            \model ->
+                params.subscriptions model
+                    |> Sub.map (\msg_ -> Tuple.pair msg_ Nothing)
         }
 
 
