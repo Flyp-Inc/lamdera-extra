@@ -107,35 +107,7 @@ frontend =
     Lamdera.frontend
 
 
-type alias BackendProgram backendModel toBackend backendMsg =
-    { init : ( backendModel, Cmd backendMsg )
-    , update : backendMsg -> backendModel -> ( backendModel, Cmd backendMsg )
-    , updateFromFrontend : Lamdera.SessionId -> Lamdera.ClientId -> toBackend -> backendModel -> ( backendModel, Cmd backendMsg )
-    , subscriptions : backendModel -> Sub backendMsg
-    }
-
-
-backend :
-    { init : ( backendModel, Cmd backendMsg )
-    , update : backendMsg -> backendModel -> ( backendModel, Cmd backendMsg )
-    , updateFromFrontend : SessionId -> ClientId -> toBackend -> backendModel -> ( backendModel, Cmd backendMsg )
-    , subscriptions : backendModel -> Sub backendMsg
-    }
-    -> BackendProgram backendModel toBackend backendMsg
-backend { init, update, updateFromFrontend, subscriptions } =
-    Lamdera.backend
-        { init = init
-        , update = update
-        , updateFromFrontend =
-            \sessionId clientId ->
-                updateFromFrontend
-                    (newSessionId sessionId)
-                    (newClientId clientId)
-        , subscriptions = subscriptions
-        }
-
-
-type alias BackendProgram_ backendModel toBackend bsg =
+type alias BackendProgram backendModel toBackend bsg =
     { init : ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
     , subscriptions : backendModel -> Sub ( bsg, Maybe Time.Posix )
     , update :
@@ -151,27 +123,14 @@ type alias BackendProgram_ backendModel toBackend bsg =
     }
 
 
-backend_ :
+backend :
     { init : ( backendModel, Cmd bsg )
     , update : Time.Posix -> bsg -> backendModel -> ( backendModel, Cmd bsg )
     , updateFromFrontend : SessionId -> ClientId -> toBackend -> backendModel -> ( backendModel, Cmd bsg )
     , subscriptions : backendModel -> Sub bsg
     }
-    ->
-        { init : ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
-        , subscriptions : backendModel -> Sub ( bsg, Maybe Time.Posix )
-        , update :
-            ( bsg, Maybe Time.Posix )
-            -> backendModel
-            -> ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
-        , updateFromFrontend :
-            Lamdera.SessionId
-            -> Lamdera.ClientId
-            -> toBackend
-            -> backendModel
-            -> ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
-        }
-backend_ params =
+    -> BackendProgram backendModel toBackend bsg
+backend params =
     let
         mapCmd : ( model, Cmd msg ) -> ( model, Cmd ( msg, Maybe Time.Posix ) )
         mapCmd ( model, cmdMsg ) =

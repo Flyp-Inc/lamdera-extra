@@ -61,7 +61,7 @@ type alias BackendProgram backendModel toBackend backendMsg =
 
 backend :
     { init : ( backendModel, Cmd backendMsg )
-    , update : backendMsg -> backendModel -> ( backendModel, Cmd backendMsg )
+    , update : Time.Posix -> backendMsg -> backendModel -> ( backendModel, Cmd backendMsg )
     , updateFromFrontend : SessionId -> ClientId -> toBackend -> backendModel -> ( backendModel, Cmd backendMsg )
     , subscriptions : backendModel -> Sub backendMsg
     }

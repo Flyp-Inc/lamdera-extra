@@ -1,6 +1,7 @@
 module Backend exposing (..)
 
 import Html
+import L
 import Lamdera
 import Task
 import Time
@@ -11,40 +12,8 @@ type alias Model =
     BackendModel
 
 
-backend params =
-    let
-        mapCmd : ( model, Cmd msg ) -> ( model, Cmd ( msg, Maybe Time.Posix ) )
-        mapCmd ( model, cmdMsg ) =
-            ( model
-            , Cmd.map (\msg_ -> Tuple.pair msg_ Nothing) cmdMsg
-            )
-    in
-    Lamdera.backend
-        { init = mapCmd params.init
-        , update =
-            \( msg, maybeTimestamp ) model ->
-                case maybeTimestamp of
-                    Nothing ->
-                        ( model
-                        , Task.perform (Just >> Tuple.pair msg) Time.now
-                        )
-
-                    Just timestamp ->
-                        params.update timestamp msg model
-                            |> mapCmd
-        , updateFromFrontend =
-            \sessionId clientId toBackend model ->
-                params.updateFromFrontend sessionId clientId toBackend model
-                    |> mapCmd
-        , subscriptions =
-            \model ->
-                params.subscriptions model
-                    |> Sub.map (\msg_ -> Tuple.pair msg_ Nothing)
-        }
-
-
 app =
-    backend
+    L.backend
         { init = init
         , update = update
         , updateFromFrontend = updateFromFrontend
@@ -66,7 +35,7 @@ update timestamp msg model =
             ( model, Cmd.none )
 
 
-updateFromFrontend : Lamdera.SessionId -> Lamdera.ClientId -> ToBackend -> Model -> ( Model, Cmd Bsg )
+updateFromFrontend : L.SessionId -> L.ClientId -> ToBackend -> Model -> ( Model, Cmd Bsg )
 updateFromFrontend sessionId clientId msg model =
     case msg of
         NoOpToBackend ->
