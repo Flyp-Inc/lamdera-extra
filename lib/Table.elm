@@ -64,11 +64,11 @@ to be unique at the _table_ level; so if you don't need your record identities t
 as the identity for every instance of `Table` in your application.
 
 -}
-init : Random.Seed -> Table a
-init seed =
+init : Table a
+init =
     Table
         { dict = Dict.empty
-        , seed = seed
+        , seed = Random.initialSeed 0
         , deleted = Dict.empty
         , index = Dict.empty
         }

@@ -3,7 +3,6 @@ module BirdSighting exposing (..)
 import Col
 import Table
 import Time
-import Types as App
 
 
 type alias Record =

@@ -1,8 +1,10 @@
 module Backend exposing (..)
 
+import BirdSighting
 import Html
 import L
 import Lamdera
+import Table
 import Task
 import Time
 import Types exposing (..)
@@ -23,7 +25,9 @@ app =
 
 init : ( Model, Cmd Bsg )
 init =
-    ( { message = "Hello!" }
+    ( { message = "Hello!"
+      , birdSightings = Table.init
+      }
     , Cmd.none
     )
 
@@ -38,5 +42,5 @@ update timestamp msg model =
 updateFromFrontend : L.SessionId -> L.ClientId -> ToBackend -> Model -> ( Model, Cmd Bsg )
 updateFromFrontend sessionId clientId msg model =
     case msg of
-        NoOpToBackend ->
+        SawABird { species, location } ->
             ( model, Cmd.none )
