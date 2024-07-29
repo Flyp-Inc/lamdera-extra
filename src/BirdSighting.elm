@@ -16,10 +16,15 @@ type alias Table =
     Table.Table Record
 
 
+config : Table.Config Id Record
+config =
+    Table.define Id (\(Id i) -> i)
+
+
 type Id
     = Id String
 
 
 cons : Time.Posix -> Record -> Table -> ( { id : Id, value : Record, createdAt : Time.Posix }, Table )
 cons =
-    Table.cons Id
+    Table.cons config

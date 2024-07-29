@@ -39,6 +39,7 @@ import Dict
 import L
 import Murmur3
 import Random
+import Set
 import Task
 import Time
 import UUID
@@ -48,10 +49,10 @@ import UUID
 -}
 type Table a
     = Table
-        { dict : Dict.Dict String { value : a, createdAt : Time.Posix }
+        { dict : Dict.Dict String { value : a, createdAt : Time.Posix, indexKeys : Set.Set Int }
         , seed : Random.Seed
         , deleted : Dict.Dict String { value : a, deletedAt : Time.Posix }
-        , index : Dict.Dict Int (List String)
+        , index : Dict.Dict Int (Set.Set String)
         }
 
 
@@ -82,7 +83,7 @@ Internally, configuration is:
 
 -}
 type Config id a
-    = Config (String -> id) (List (Index a))
+    = Config (String -> id) (id -> String) (List (Index a))
 
 
 {-| Define a table's configuration.
@@ -111,9 +112,9 @@ Here's what this could look like:
     ```
 
 -}
-define : (String -> id) -> Config id a
-define toId =
-    Config toId []
+define : (String -> id) -> (id -> String) -> Config id a
+define toId fromId =
+    Config toId fromId []
 
 
 {-| Represent an index for a table.
@@ -155,52 +156,27 @@ type Index a
     = Index (a -> Int)
 
 
-{-| Create an `Index a` by providing a unique name for the column being indexed, and a string representation of that column's value.
-
-For example:
-
-    ```
-    module User exposing (..)
-
-    import Table
+type Predicate b
+    = Predicate (b -> Int)
 
 
-    type alias Record =
-        { emailAddress : String
-        , catchphrase : String
-        , role : Role
-        }
-
-
-    type Role
-        = Admin
-        | Member
-
-
-    idxRole : Table.Index Record
-    idxRole =
-        Table.toIndex "Role"
-            (\role ->
-                case role of
-                    Admin ->
-                        "Admin"
-
-                    Member ->
-                        "Member"
-            )
-    ```
-
-This is handled as a separate operation from `withIndex`, since you will need to have an `Index a` value to use as a parameter for your query.
-
+{-| Create an `Index a` and `Predicate b` by providing a unique name for the column being indexed, and a string representation of that column's value.
 -}
-toIndex : String -> (a -> String) -> Index a
-toIndex name accessor =
+toIndex : String -> (a -> b) -> (b -> String) -> ( Index a, Predicate b )
+toIndex name accessor toString =
     let
         hashSeed : Int
         hashSeed =
             Murmur3.hashString 0 name
+
+        toHashedValue : b -> Int
+        toHashedValue col =
+            Murmur3.hashString hashSeed <|
+                toString col
     in
-    Index (\value -> Murmur3.hashString hashSeed (accessor value))
+    ( Index (\value -> accessor value |> toHashedValue)
+    , Predicate toHashedValue
+    )
 
 
 {-| Add an `Index a` to a `Table a`.
@@ -244,8 +220,8 @@ toIndex name accessor =
 
 -}
 withIndex : Index a -> Config id a -> Config id a
-withIndex idx (Config toId indexes) =
-    Config toId <| idx :: indexes
+withIndex idx (Config toId fromId indexes) =
+    Config toId fromId <| idx :: indexes
 
 
 {-| Insert a record into a `Table`.
@@ -280,8 +256,8 @@ The nice thing about using `lamdera-extra` is that since there is always a `Time
 in the `update` function in `Backend`, this doesn't have to be wrapped in a `Task` or a `Cmd`.
 
 -}
-cons : (String -> id) -> Time.Posix -> a -> Table a -> ( { id : id, value : a, createdAt : Time.Posix }, Table a )
-cons toId timestamp value (Table table) =
+cons : Config id a -> Time.Posix -> a -> Table a -> ( { id : id, value : a, createdAt : Time.Posix }, Table a )
+cons (Config toId _ indexes) timestamp value (Table table) =
     let
         ( uuid, newSeed ) =
             Random.step UUID.generator table.seed
@@ -289,6 +265,14 @@ cons toId timestamp value (Table table) =
         internalId : String
         internalId =
             UUID.toString uuid
+
+        indexKeys : Set.Set Int
+        indexKeys =
+            toIndexKeys indexes value
+
+        index : Dict.Dict Int (Set.Set String)
+        index =
+            addIdToIndexByKeys internalId indexKeys table.index
     in
     ( { id = toId internalId
       , value = value
@@ -300,10 +284,11 @@ cons toId timestamp value (Table table) =
                 Dict.insert internalId
                     { value = value
                     , createdAt = timestamp
+                    , indexKeys = indexKeys
                     }
                     table.dict
             , seed = newSeed
-            , index = Debug.todo ""
+            , index = index
         }
     )
 
@@ -341,32 +326,59 @@ The `Table a` type doesn't track "updated at", since it's assumed that if you ca
 
 `update` doesn't return a tuple of the updated record and the updated table; `cons` only returns a tuple because `cons` is responsible for creating the `id` value.
 
+`update` is an expensive operation, because it rebuilds the indexes for a `Table a`; prefer data structures such that "things that change often" are defined as calls to `cons`,
+and "things that only change once in awhile" are handled by calls to `update`.
+
 -}
-update : String -> Time.Posix -> a -> Table a -> Table a
-update id timestamp value (Table table) =
+update : Config id a -> id -> Time.Posix -> a -> Table a -> Table a
+update (Config toId fromId indexes) id timestamp value (Table table) =
+    let
+        internalId : String
+        internalId =
+            fromId id
+
+        oldIndexKeys : Set.Set Int
+        oldIndexKeys =
+            Dict.get internalId table.dict
+                |> Maybe.map .indexKeys
+                |> Maybe.withDefault Set.empty
+
+        newIndexKeys : Set.Set Int
+        newIndexKeys =
+            toIndexKeys indexes value
+
+        updatedIndex : Dict.Dict Int (Set.Set String)
+        updatedIndex =
+            dropIdFromIndexByKeys internalId oldIndexKeys table.index
+                |> addIdToIndexByKeys internalId newIndexKeys
+    in
     Table
         { table
-            | dict = Dict.insert id { value = value, createdAt = timestamp } table.dict
-            , index = Debug.todo ""
+            | dict = Dict.insert internalId { value = value, createdAt = timestamp, indexKeys = newIndexKeys } table.dict
+            , index = updatedIndex
         }
 
 
 {-| Delete a record from a `Table`.
 -}
-delete : (id -> String) -> Time.Posix -> id -> Table a -> Table a
-delete toId timestamp id ((Table table) as table_) =
+delete : Config id a -> Time.Posix -> id -> Table a -> Table a
+delete (Config toId fromId indexes) timestamp id ((Table table) as table_) =
     let
-        id_ : String
-        id_ =
-            toId id
+        internalId : String
+        internalId =
+            fromId id
+
+        toUpdatedIndex : Set.Set Int -> Dict.Dict Int (Set.Set String)
+        toUpdatedIndex indexKeys =
+            dropIdFromIndexByKeys internalId indexKeys table.index
     in
-    case Dict.get id_ table.dict of
-        Just { value } ->
+    case Dict.get internalId table.dict of
+        Just { value, indexKeys } ->
             Table
                 { table
-                    | dict = Dict.remove id_ table.dict
-                    , index = Debug.todo ""
-                    , deleted = Dict.insert id_ { value = value, deletedAt = timestamp } table.deleted
+                    | dict = Dict.remove internalId table.dict
+                    , index = toUpdatedIndex indexKeys
+                    , deleted = Dict.insert internalId { value = value, deletedAt = timestamp } table.deleted
                 }
 
         Nothing ->
@@ -375,6 +387,125 @@ delete toId timestamp id ((Table table) as table_) =
 
 {-| Get a value by its `id`.
 -}
-getById : (id -> String) -> id -> Table a -> Maybe { value : a, createdAt : Time.Posix }
-getById toId id (Table table) =
-    Dict.get (toId id) table.dict
+getById : Config id a -> id -> Table a -> Maybe { value : a, createdAt : Time.Posix }
+getById (Config _ fromId _) id (Table table) =
+    Dict.get (fromId id) table.dict
+        |> Maybe.map
+            (\record ->
+                { value = record.value
+                , createdAt = record.createdAt
+                }
+            )
+
+
+{-| Query values in a table based on a `Predicate b`.
+-}
+whereByIndex : Predicate b -> b -> Table a -> Table a
+whereByIndex (Predicate toIndexKey) term (Table table) =
+    let
+        maybeInternalIds : Maybe (Set.Set String)
+        maybeInternalIds =
+            Dict.get (toIndexKey term) table.index
+    in
+    case maybeInternalIds of
+        Nothing ->
+            Table { table | dict = Dict.empty }
+
+        Just internalIds ->
+            Table
+                { table
+                    | dict =
+                        Dict.filter
+                            (\internalId _ ->
+                                Set.member internalId internalIds
+                            )
+                            table.dict
+                }
+
+
+{-| Query values in a table based on a predicate derived from any column value.
+
+This does _not_ use any of a table's indexes. If you need to use `filter`, then consider either:
+
+    - Creating an `Index a` so that you can have a `Predicate b` to use with `whereByIndex`, or
+    - Filtering the result set down as much as possible by `whereByIndex` first, before applying `filter`
+
+-}
+filter : (a -> Bool) -> Table a -> Table a
+filter toPredicate (Table table) =
+    Table
+        { table
+            | dict =
+                Dict.filter
+                    (\_ { value } ->
+                        toPredicate value
+                    )
+                    table.dict
+        }
+
+
+
+-- internals
+
+
+{-| Convert a value to its "index keys" - i.e., unique values within a table's index
+-}
+toIndexKeys : List (Index a) -> a -> Set.Set Int
+toIndexKeys indexes value =
+    List.map (\(Index idx) -> idx value) indexes
+        |> Set.fromList
+
+
+{-| Add a record's internal ID to a table's index; the index is represented as a dictionary:
+
+    - the key is a unique hash of the value of a column
+    - the value is a set of internal ID values that represent "records where this column's value hashes to the value of the key"
+
+-}
+addIdToIndexByKeys : String -> Set.Set Int -> Dict.Dict Int (Set.Set String) -> Dict.Dict Int (Set.Set String)
+addIdToIndexByKeys internalId indexKeys index =
+    Set.foldl
+        (\key ->
+            Dict.update key
+                (\maybeRecord ->
+                    Just <|
+                        Set.insert internalId <|
+                            case maybeRecord of
+                                Nothing ->
+                                    Set.empty
+
+                                Just idSet ->
+                                    idSet
+                )
+        )
+        index
+        indexKeys
+
+
+{-| Remove a record's internal ID from a table's index
+-}
+dropIdFromIndexByKeys : String -> Set.Set Int -> Dict.Dict Int (Set.Set String) -> Dict.Dict Int (Set.Set String)
+dropIdFromIndexByKeys internalId indexKeys index =
+    Set.foldl
+        (\key ->
+            Dict.update key
+                (\maybeRecord ->
+                    case maybeRecord of
+                        Nothing ->
+                            Nothing
+
+                        Just idSet ->
+                            let
+                                updatedIdSet : Set.Set String
+                                updatedIdSet =
+                                    Set.remove internalId idSet
+                            in
+                            if Set.isEmpty updatedIdSet then
+                                Nothing
+
+                            else
+                                Just updatedIdSet
+                )
+        )
+        index
+        indexKeys
