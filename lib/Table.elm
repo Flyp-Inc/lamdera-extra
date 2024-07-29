@@ -1,7 +1,7 @@
 module Table exposing
     ( Table, init
     , Config, define
-    , Index, Predicate, toIndex, withIndex
+    , Spec, Index, Predicate, toIndex, withIndex
     , cons, update, delete
     , getById, where_, filter
     )
@@ -21,7 +21,7 @@ the `Table` type takes responsibility for mediating those operations.
 
 @docs Config, define
 
-@docs Index, Predicate, toIndex, withIndex
+@docs Spec, Index, Predicate, toIndex, withIndex
 
 
 # Commands
@@ -117,6 +117,12 @@ define toId fromId =
     Config toId fromId []
 
 
+type alias Spec a b =
+    { index : Index a
+    , predicate : Predicate a b
+    }
+
+
 {-| Represent an index for a table.
 
 Internally, an index is:
@@ -156,13 +162,13 @@ type Index a
     = Index (a -> Int)
 
 
-type Predicate b
+type Predicate a b
     = Predicate (b -> Int)
 
 
-{-| Create an `Index a` and `Predicate b` by providing a unique name for the column being indexed, and a string representation of that column's value.
+{-| Create an `Index a` and `Predicate a b` by providing a unique name for the column being indexed, and a string representation of that column's value.
 -}
-toIndex : String -> (a -> b) -> (b -> String) -> ( Index a, Predicate b )
+toIndex : String -> (a -> b) -> (b -> String) -> Spec a b
 toIndex name accessor toString =
     let
         hashSeed : Int
@@ -174,9 +180,9 @@ toIndex name accessor toString =
             Murmur3.hashString hashSeed <|
                 toString col
     in
-    ( Index (\value -> accessor value |> toHashedValue)
-    , Predicate toHashedValue
-    )
+    { index = Index (\value -> accessor value |> toHashedValue)
+    , predicate = Predicate toHashedValue
+    }
 
 
 {-| Add an `Index a` to a `Table a`.
@@ -200,8 +206,7 @@ toIndex name accessor toString =
         | Member
 
 
-    idxRole : Table.Index Record
-    idxRole =
+    ( idxRole, predRole ) =
         Table.toIndex "Role"
             (\role ->
                 case role of
@@ -398,9 +403,9 @@ getById (Config _ fromId _) id (Table table) =
             )
 
 
-{-| Query values in a table based on a `Predicate b`.
+{-| Query values in a table based on a `Predicate a b`.
 -}
-where_ : Predicate b -> b -> Table a -> Table a
+where_ : Predicate a b -> b -> Table a -> Table a
 where_ (Predicate toIndexKey) term (Table table) =
     let
         maybeInternalIds : Maybe (Set.Set String)

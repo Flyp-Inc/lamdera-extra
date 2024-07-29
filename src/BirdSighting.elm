@@ -8,7 +8,7 @@ import Types as App
 
 type alias Record =
     { species : String
-    , location : Col.Col String
+    , location : String
     }
 
 
@@ -23,6 +23,11 @@ config =
 
 type Id
     = Id String
+
+
+specSpecies : Table.Spec Record String
+specSpecies =
+    Table.toIndex "Species" .species identity
 
 
 cons : Time.Posix -> Record -> Table -> ( { id : Id, value : Record, createdAt : Time.Posix }, Table )
