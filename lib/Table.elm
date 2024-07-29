@@ -1,7 +1,7 @@
 module Table exposing
     ( Table, init
     , Config, define
-    , Spec, Index, Predicate, toIndex, withIndex
+    , Spec, Index, Predicate, toSpec, withIndex
     , cons, update, delete
     , getById, where_, filter
     )
@@ -21,7 +21,7 @@ the `Table` type takes responsibility for mediating those operations.
 
 @docs Config, define
 
-@docs Spec, Index, Predicate, toIndex, withIndex
+@docs Spec, Index, Predicate, toSpec, withIndex
 
 
 # Commands
@@ -166,10 +166,10 @@ type Predicate a b
     = Predicate (b -> Int)
 
 
-{-| Create an `Index a` and `Predicate a b` by providing a unique name for the column being indexed, and a string representation of that column's value.
+{-| Create an `Index a` and `Predicate a b` by providing a unique name for the index, and a string representation of the indexed value.
 -}
-toIndex : String -> (a -> b) -> (b -> String) -> Spec a b
-toIndex name accessor toString =
+toSpec : String -> (a -> b) -> (b -> String) -> Spec a b
+toSpec name accessor toString =
     let
         hashSeed : Int
         hashSeed =
@@ -186,43 +186,6 @@ toIndex name accessor toString =
 
 
 {-| Add an `Index a` to a `Table a`.
-
-    ```
-    module User exposing (..)
-
-    import Table
-
-    type alias Record =
-        { emailAddress : String
-        , role : Role
-        }
-
-
-    type Id
-        = Id String
-
-    type Role
-        = Admin
-        | Member
-
-
-    ( idxRole, predRole ) =
-        Table.toIndex "Role"
-            (\role ->
-                case role of
-                    Admin ->
-                        "Admin"
-
-                    Member ->
-                        "Member"
-            )
-
-    config : Table.Config Id Record
-    config =
-        Table.define Id
-            |> Table.withIndex idxRole
-    ```
-
 -}
 withIndex : Index a -> Config id a -> Config id a
 withIndex idx (Config toId fromId indexes) =
