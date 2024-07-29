@@ -12,8 +12,7 @@ To use `lamdera-extra` in your own Lamdera application:
 
 ### Phase 0: Install `lamdera-extra`'s dependencies
 ```
-lamdera install elm/random
-lamdera install TSFoster/elm-uuid
+lamdera install elm/time
 ```
 
 ### Phase 1: Add it to your repo

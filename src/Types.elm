@@ -1,6 +1,5 @@
 module Types exposing (..)
 
-import BirdSighting
 import Browser
 import Browser.Navigation
 import Time
@@ -15,7 +14,6 @@ type alias FrontendModel =
 
 type alias BackendModel =
     { message : String
-    , birdSightings : BirdSighting.Table
     }
 
 
@@ -26,7 +24,7 @@ type FrontendMsg
 
 
 type ToBackend
-    = SawABird { species : String, location : String }
+    = NoOpToBackend
 
 
 type alias BackendMsg =
@@ -34,7 +32,7 @@ type alias BackendMsg =
 
 
 type Bsg
-    = NoOpBackendMsg
+    = NoOp
 
 
 type ToFrontend
