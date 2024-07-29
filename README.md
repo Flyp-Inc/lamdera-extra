@@ -6,6 +6,10 @@ The rationale behind this repository existing in the first place, is that we wan
 
 This makes it easy for [John](https://github.com/jmpavlick) to prototype with platform-level ideas, without breaking the whole application a hundred times between iterations on some unhinged long-shot that may or may not even work out.
 
+## Does it even run?
+
+Yeah, just hit `lamdera live`.
+
 ## Usage
 
 To use `lamdera-extra` in your own Lamdera application:
