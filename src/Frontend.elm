@@ -1,5 +1,6 @@
 module Frontend exposing (..)
 
+import BirdSighting
 import Browser
 import Browser.Navigation
 import Html

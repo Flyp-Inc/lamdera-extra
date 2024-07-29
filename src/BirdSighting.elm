@@ -23,8 +23,3 @@ type Id
 cons : Time.Posix -> Record -> Table -> ( { id : Id, value : Record, createdAt : Time.Posix }, Table )
 cons =
     Table.cons Id
-
-
-type FrontendMsg
-    = UpdatedSpecies String
-    | UpdatedLocation String

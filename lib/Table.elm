@@ -1,8 +1,8 @@
 module Table exposing
-    ( Table
+    ( Table, init
     , Config, define
-    , Index, withIndex, toIndex
-    , init, cons, update, delete
+    , Index, toIndex, withIndex
+    , cons, update, delete
     , getById
     )
 
@@ -14,19 +14,19 @@ the `Table` type takes responsibility for mediating those operations.
 
 # Type
 
-@docs Table
+@docs Table, init
 
 
 # Configuration
 
 @docs Config, define
 
-@docs Index, withIndex, toIndex
+@docs Index, toIndex, withIndex
 
 
 # Commands
 
-@docs init, cons, update, delete
+@docs cons, update, delete
 
 
 # Queries
@@ -47,15 +47,29 @@ import UUID
 {-| Opaque type representing a "table".
 -}
 type Table a
-    = Table (Dict.Dict String { value : a, createdAt : Time.Posix }) Random.Seed (Dict.Dict String { value : a, deletedAt : Time.Posix })
-
-
-type Table_ a
-    = Table_
-        { rows : Dict.Dict String { value : a, createdAt : Time.Posix }
+    = Table
+        { dict : Dict.Dict String { value : a, createdAt : Time.Posix }
         , seed : Random.Seed
         , deleted : Dict.Dict String { value : a, deletedAt : Time.Posix }
         , index : Dict.Dict Int (List String)
+        }
+
+
+{-| Create a new `Table`.
+
+Each table contains a `Random.Seed` that is stepped every time you insert a new record, to generate that record's unique identifier.
+How you choose to create that `Random.Seed` value is up to you; in a tranditional relational database, it is not uncommon for identities
+to be unique at the _table_ level; so if you don't need your record identities to be _globally_ unique, it would be OK to simply use `Random.initialSeed 0`
+as the identity for every instance of `Table` in your application.
+
+-}
+init : Random.Seed -> Table a
+init seed =
+    Table
+        { dict = Dict.empty
+        , seed = seed
+        , deleted = Dict.empty
+        , index = Dict.empty
         }
 
 
@@ -141,13 +155,6 @@ type Index a
     = Index (a -> Int)
 
 
-{-| Add an `Index a` to a `Table a`.
--}
-withIndex : Index a -> Config id a -> Config id a
-withIndex idx (Config toId indexes) =
-    Config toId <| idx :: indexes
-
-
 {-| Create an `Index a` by providing a unique name for the column being indexed, and a string representation of that column's value.
 
 For example:
@@ -196,19 +203,49 @@ toIndex name accessor =
     Index (\value -> Murmur3.hashString hashSeed (accessor value))
 
 
-{-| Create a new `Table`.
+{-| Add an `Index a` to a `Table a`.
 
-Each table contains a `Random.Seed` that is stepped every time you insert a new record, to generate that record's unique identifier.
-How you choose to create that `Random.Seed` value is up to you; in a tranditional relational database, it is not uncommon for identities
-to be unique at the _table_ level; so if you don't need your record identities to be _globally_ unique, it would be OK to simply use `Random.initialSeed 0`
-as the identity for every instance of `Table` in your application.
+    ```
+    module User exposing (..)
+
+    import Table
+
+    type alias Record =
+        { emailAddress : String
+        , role : Role
+        }
+
+
+    type Id
+        = Id String
+
+    type Role
+        = Admin
+        | Member
+
+
+    idxRole : Table.Index Record
+    idxRole =
+        Table.toIndex "Role"
+            (\role ->
+                case role of
+                    Admin ->
+                        "Admin"
+
+                    Member ->
+                        "Member"
+            )
+
+    config : Table.Config Id Record
+    config =
+        Table.define Id
+            |> Table.withIndex idxRole
+    ```
 
 -}
-init : Random.Seed -> Table a
-init seed =
-    Table Dict.empty
-        seed
-        Dict.empty
+withIndex : Index a -> Config id a -> Config id a
+withIndex idx (Config toId indexes) =
+    Config toId <| idx :: indexes
 
 
 {-| Insert a record into a `Table`.
@@ -244,10 +281,10 @@ in the `update` function in `Backend`, this doesn't have to be wrapped in a `Tas
 
 -}
 cons : (String -> id) -> Time.Posix -> a -> Table a -> ( { id : id, value : a, createdAt : Time.Posix }, Table a )
-cons toId timestamp value (Table dict seed deleted) =
+cons toId timestamp value (Table table) =
     let
         ( uuid, newSeed ) =
-            Random.step UUID.generator seed
+            Random.step UUID.generator table.seed
 
         internalId : String
         internalId =
@@ -258,14 +295,16 @@ cons toId timestamp value (Table dict seed deleted) =
       , createdAt = timestamp
       }
     , Table
-        (Dict.insert internalId
-            { value = value
-            , createdAt = timestamp
-            }
-            dict
-        )
-        newSeed
-        deleted
+        { table
+            | dict =
+                Dict.insert internalId
+                    { value = value
+                    , createdAt = timestamp
+                    }
+                    table.dict
+            , seed = newSeed
+            , index = Debug.todo ""
+        }
     )
 
 
@@ -304,32 +343,38 @@ The `Table a` type doesn't track "updated at", since it's assumed that if you ca
 
 -}
 update : String -> Time.Posix -> a -> Table a -> Table a
-update id timestamp value (Table dict seed deleted) =
-    Table (Dict.insert id { value = value, createdAt = timestamp } dict) seed deleted
+update id timestamp value (Table table) =
+    Table
+        { table
+            | dict = Dict.insert id { value = value, createdAt = timestamp } table.dict
+            , index = Debug.todo ""
+        }
 
 
 {-| Delete a record from a `Table`.
 -}
 delete : (id -> String) -> Time.Posix -> id -> Table a -> Table a
-delete toId timestamp id ((Table dict seed deleted) as table) =
+delete toId timestamp id ((Table table) as table_) =
     let
         id_ : String
         id_ =
             toId id
     in
-    case Dict.get id_ dict of
+    case Dict.get id_ table.dict of
         Just { value } ->
             Table
-                (Dict.remove id_ dict)
-                seed
-                (Dict.insert id_ { value = value, deletedAt = timestamp } deleted)
+                { table
+                    | dict = Dict.remove id_ table.dict
+                    , index = Debug.todo ""
+                    , deleted = Dict.insert id_ { value = value, deletedAt = timestamp } table.deleted
+                }
 
         Nothing ->
-            table
+            table_
 
 
 {-| Get a value by its `id`.
 -}
 getById : (id -> String) -> id -> Table a -> Maybe { value : a, createdAt : Time.Posix }
-getById toId id (Table dict _ _) =
-    Dict.get (toId id) dict
+getById toId id (Table table) =
+    Dict.get (toId id) table.dict
