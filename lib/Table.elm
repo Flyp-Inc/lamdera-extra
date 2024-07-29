@@ -1,9 +1,9 @@
 module Table exposing
     ( Table, init
     , Config, define
-    , Index, toIndex, withIndex
+    , Index, Predicate, toIndex, withIndex
     , cons, update, delete
-    , getById
+    , getById, where_, filter
     )
 
 {-| Represents a "table" semantic, where a "table" is a a dictionary of values that have a unique identity, and a "created at" timestamp.
@@ -21,7 +21,7 @@ the `Table` type takes responsibility for mediating those operations.
 
 @docs Config, define
 
-@docs Index, toIndex, withIndex
+@docs Index, Predicate, toIndex, withIndex
 
 
 # Commands
@@ -31,7 +31,7 @@ the `Table` type takes responsibility for mediating those operations.
 
 # Queries
 
-@docs getById
+@docs getById, where_, filter
 
 -}
 
@@ -400,8 +400,8 @@ getById (Config _ fromId _) id (Table table) =
 
 {-| Query values in a table based on a `Predicate b`.
 -}
-whereByIndex : Predicate b -> b -> Table a -> Table a
-whereByIndex (Predicate toIndexKey) term (Table table) =
+where_ : Predicate b -> b -> Table a -> Table a
+where_ (Predicate toIndexKey) term (Table table) =
     let
         maybeInternalIds : Maybe (Set.Set String)
         maybeInternalIds =
@@ -427,8 +427,8 @@ whereByIndex (Predicate toIndexKey) term (Table table) =
 
 This does _not_ use any of a table's indexes. If you need to use `filter`, then consider either:
 
-    - Creating an `Index a` so that you can have a `Predicate b` to use with `whereByIndex`, or
-    - Filtering the result set down as much as possible by `whereByIndex` first, before applying `filter`
+    - Creating an `Index a` so that you can have a `Predicate b` to use with `where_`, or
+    - Filtering the result set down as much as possible by `where_` first, before applying `filter`
 
 -}
 filter : (a -> Bool) -> Table a -> Table a
