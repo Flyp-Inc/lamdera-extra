@@ -34,7 +34,7 @@ import Task
 import Time
 
 
-{-| Represents a "column" semantic, with support for tracking changes over time.
+{-| Opaque type representing a "column".
 -}
 type Col a
     = Col ( Time.Posix, a, Dict.Dict Int a )
