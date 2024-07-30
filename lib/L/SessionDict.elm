@@ -1,4 +1,4 @@
-module L.SessionDict exposing (SessionDict, empty, get, insert, remove, update)
+module L.SessionDict exposing (SessionDict, empty, filter, get, insert, remove, update)
 
 import Dict
 import L.Internal as L
@@ -31,3 +31,8 @@ remove id =
 empty : SessionDict value
 empty =
     Dict.empty
+
+
+filter : (value -> Bool) -> L.SessionDict value -> L.SessionDict value
+filter func =
+    Dict.filter (\_ value -> func value)
