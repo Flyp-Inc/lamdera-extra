@@ -1,4 +1,4 @@
-module L exposing (BackendProgram, ClientId, ClientSet, FrontendProgram, SessionDict, SessionId, backend, broadcast, frontend, onConnect, onDisconnect, sendToBackend, sendToClients, sendToFrontend, sessionIdFromCore)
+module L exposing (BackendProgram, ClientId, ClientSet, FrontendProgram, SessionDict, SessionId, backend, broadcast, frontend, frontend2, onConnect, onDisconnect, sendToBackend, sendToClients, sendToFrontend, sessionIdFromCore)
 
 import Browser
 import Browser.Navigation
@@ -53,6 +53,10 @@ frontend :
     -> FrontendProgram model toFrontend frontendMsg
 frontend =
     L.Internal.frontend
+
+
+frontend2 =
+    L.Internal.frontend2
 
 
 type alias BackendProgram backendModel toBackend backendMsg =

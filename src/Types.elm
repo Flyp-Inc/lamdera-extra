@@ -17,7 +17,11 @@ type alias BackendModel =
     }
 
 
-type FrontendMsg
+type alias FrontendMsg =
+    ( Msg, Maybe Time.Posix )
+
+
+type Msg
     = UrlClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | NoOpFrontendMsg

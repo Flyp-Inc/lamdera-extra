@@ -4,7 +4,8 @@ import Browser
 import Browser.Navigation
 import Html
 import Html.Attributes as Attr
-import Lamdera
+import L
+import Time
 import Types exposing (..)
 import Url
 
@@ -14,7 +15,7 @@ type alias Model =
 
 
 app =
-    Lamdera.frontend
+    L.frontend2
         { init = init
         , onUrlRequest = UrlClicked
         , onUrlChange = UrlChanged
@@ -25,7 +26,7 @@ app =
         }
 
 
-init : Url.Url -> Browser.Navigation.Key -> ( Model, Cmd FrontendMsg )
+init : Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation, with some added topspin from an unhinged community member."
@@ -34,8 +35,8 @@ init url key =
     )
 
 
-update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
-update msg model =
+update : Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
+update now msg model =
     case msg of
         UrlClicked urlRequest ->
             case urlRequest of
@@ -56,14 +57,14 @@ update msg model =
             ( model, Cmd.none )
 
 
-updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
+updateFromBackend : ToFrontend -> Model -> ( Model, Cmd Msg )
 updateFromBackend msg model =
     case msg of
         NoOpToFrontend ->
             ( model, Cmd.none )
 
 
-view : Model -> Browser.Document FrontendMsg
+view : Model -> Browser.Document Msg
 view model =
     { title = ""
     , body =
