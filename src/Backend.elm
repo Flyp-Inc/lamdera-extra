@@ -35,8 +35,8 @@ update timestamp msg model =
             ( model, Cmd.none )
 
 
-updateFromFrontend : L.SessionId -> L.ClientId -> ToBackend -> Model -> ( Model, Cmd Bsg )
-updateFromFrontend sessionId clientId msg model =
+updateFromFrontend : Time.Posix -> L.SessionId -> L.ClientId -> ToB -> Model -> ( Model, Cmd Bsg )
+updateFromFrontend timestamp sessionId clientId msg model =
     case msg of
         NoOpToBackend ->
             ( model, Cmd.none )

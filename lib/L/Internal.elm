@@ -154,7 +154,7 @@ frontend params =
         }
 
 
-type alias BackendProgram backendModel toBackend bsg =
+type alias BackendProgram backendModel toB bsg =
     { init : ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
     , subscriptions : backendModel -> Sub ( bsg, Maybe Time.Posix )
     , update :
@@ -164,7 +164,7 @@ type alias BackendProgram backendModel toBackend bsg =
     , updateFromFrontend :
         Lamdera.SessionId
         -> Lamdera.ClientId
-        -> toBackend
+        -> ( toB, Time.Posix )
         -> backendModel
         -> ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
     }
@@ -173,10 +173,10 @@ type alias BackendProgram backendModel toBackend bsg =
 backend :
     { init : ( backendModel, Cmd bsg )
     , update : Time.Posix -> bsg -> backendModel -> ( backendModel, Cmd bsg )
-    , updateFromFrontend : SessionId -> ClientId -> toBackend -> backendModel -> ( backendModel, Cmd bsg )
+    , updateFromFrontend : Time.Posix -> SessionId -> ClientId -> toB -> backendModel -> ( backendModel, Cmd bsg )
     , subscriptions : backendModel -> Sub bsg
     }
-    -> BackendProgram backendModel toBackend bsg
+    -> BackendProgram backendModel toB bsg
 backend params =
     Lamdera.backend
         { init = mapUpdate params.init
@@ -192,8 +192,8 @@ backend params =
                         params.update timestamp msg model
                             |> mapUpdate
         , updateFromFrontend =
-            \sessionId clientId toBackend model ->
-                params.updateFromFrontend (newSessionId sessionId) (newClientId clientId) toBackend model
+            \sessionId clientId ( toB, timestamp ) model ->
+                params.updateFromFrontend timestamp (newSessionId sessionId) (newClientId clientId) toB model
                     |> mapUpdate
         , subscriptions =
             \model ->
