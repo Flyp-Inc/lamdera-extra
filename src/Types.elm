@@ -27,11 +27,7 @@ type Msg
     | NoOpFrontendMsg
 
 
-type alias ToBackend =
-    ( ToB, Time.Posix )
-
-
-type ToB
+type ToBackend
     = NoOpToBackend
 
 

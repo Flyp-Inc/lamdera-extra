@@ -78,10 +78,10 @@ type alias BackendProgram backendModel toBackend backendMsg =
 backend :
     { init : ( backendModel, Cmd bsg )
     , update : Time.Posix -> bsg -> backendModel -> ( backendModel, Cmd bsg )
-    , updateFromFrontend : Time.Posix -> SessionId -> ClientId -> toB -> backendModel -> ( backendModel, Cmd bsg )
+    , updateFromFrontend : SessionId -> ClientId -> toBackend -> backendModel -> ( backendModel, Cmd bsg )
     , subscriptions : backendModel -> Sub bsg
     }
-    -> BackendProgram backendModel toB bsg
+    -> BackendProgram backendModel toBackend bsg
 backend =
     L.Internal.backend
 
