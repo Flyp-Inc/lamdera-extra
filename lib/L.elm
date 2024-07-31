@@ -1,4 +1,20 @@
-module L exposing (BackendProgram, ClientId, ClientSet, FrontendProgram, SessionDict, SessionId, backend, broadcast, frontend, frontend2, onConnect, onDisconnect, sendToBackend, sendToClients, sendToFrontend, sessionIdFromCore)
+module L exposing
+    ( BackendProgram
+    , ClientId
+    , ClientSet
+    , FrontendProgram
+    , SessionDict
+    , SessionId
+    , backend
+    , broadcast
+    , frontend
+    , onConnect
+    , onDisconnect
+    , sendToBackend
+    , sendToClients
+    , sendToFrontend
+    , sessionIdFromCore
+    )
 
 import Browser
 import Browser.Navigation
@@ -37,26 +53,22 @@ broadcast =
     L.Internal.broadcast
 
 
-type alias FrontendProgram model toFrontend frontendMsg =
-    L.Internal.FrontendProgram model toFrontend frontendMsg
+type alias FrontendProgram frontendModel toFrontend msg =
+    L.Internal.FrontendProgram frontendModel toFrontend msg
 
 
 frontend :
-    { init : Url.Url -> Browser.Navigation.Key -> ( model, Cmd frontendMsg )
-    , view : model -> Browser.Document frontendMsg
-    , update : frontendMsg -> model -> ( model, Cmd frontendMsg )
-    , updateFromBackend : toFrontend -> model -> ( model, Cmd frontendMsg )
-    , subscriptions : model -> Sub frontendMsg
-    , onUrlRequest : Browser.UrlRequest -> frontendMsg
-    , onUrlChange : Url.Url -> frontendMsg
+    { init : Url.Url -> Browser.Navigation.Key -> ( frontendModel, Cmd msg )
+    , view : frontendModel -> Browser.Document msg
+    , update : Time.Posix -> msg -> frontendModel -> ( frontendModel, Cmd msg )
+    , updateFromBackend : toFrontend -> frontendModel -> ( frontendModel, Cmd msg )
+    , subscriptions : frontendModel -> Sub msg
+    , onUrlRequest : Browser.UrlRequest -> msg
+    , onUrlChange : Url.Url -> msg
     }
-    -> FrontendProgram model toFrontend frontendMsg
+    -> FrontendProgram frontendModel toFrontend msg
 frontend =
     L.Internal.frontend
-
-
-frontend2 =
-    L.Internal.frontend2
 
 
 type alias BackendProgram backendModel toBackend backendMsg =

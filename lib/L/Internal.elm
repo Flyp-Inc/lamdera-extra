@@ -8,7 +8,6 @@ module L.Internal exposing
     , backend
     , broadcast
     , frontend
-    , frontend2
     , mapClientSet
     , newClientId
     , newSessionId
@@ -84,32 +83,37 @@ broadcast =
     Lamdera.broadcast
 
 
-type alias FrontendProgram model toFrontend frontendMsg =
-    { init : Url.Url -> Browser.Navigation.Key -> ( model, Cmd frontendMsg )
-    , view : model -> Browser.Document frontendMsg
-    , update : frontendMsg -> model -> ( model, Cmd frontendMsg )
-    , updateFromBackend : toFrontend -> model -> ( model, Cmd frontendMsg )
-    , subscriptions : model -> Sub frontendMsg
-    , onUrlRequest : Browser.UrlRequest -> frontendMsg
-    , onUrlChange : Url.Url -> frontendMsg
+type alias FrontendProgram frontendModel toFrontend msg =
+    { init :
+        Lamdera.Url
+        -> Browser.Navigation.Key
+        -> ( frontendModel, Cmd ( msg, Maybe Time.Posix ) )
+    , onUrlChange : Url.Url -> ( msg, Maybe Time.Posix )
+    , onUrlRequest : Browser.UrlRequest -> ( msg, Maybe Time.Posix )
+    , subscriptions : frontendModel -> Sub ( msg, Maybe Time.Posix )
+    , update :
+        ( msg, Maybe Time.Posix )
+        -> frontendModel
+        -> ( frontendModel, Cmd ( msg, Maybe Time.Posix ) )
+    , updateFromBackend :
+        toFrontend
+        -> frontendModel
+        -> ( frontendModel, Cmd ( msg, Maybe Time.Posix ) )
+    , view : frontendModel -> Browser.Document ( msg, Maybe Time.Posix )
     }
 
 
 frontend :
-    { init : Url.Url -> Browser.Navigation.Key -> ( model, Cmd frontendMsg )
-    , view : model -> Browser.Document frontendMsg
-    , update : frontendMsg -> model -> ( model, Cmd frontendMsg )
-    , updateFromBackend : toFrontend -> model -> ( model, Cmd frontendMsg )
-    , subscriptions : model -> Sub frontendMsg
-    , onUrlRequest : Browser.UrlRequest -> frontendMsg
-    , onUrlChange : Url.Url -> frontendMsg
+    { init : Lamdera.Url -> Browser.Navigation.Key -> ( frontendModel, Cmd msg )
+    , view : frontendModel -> Browser.Document msg
+    , update : Time.Posix -> msg -> frontendModel -> ( frontendModel, Cmd msg )
+    , updateFromBackend : toFrontend -> frontendModel -> ( frontendModel, Cmd msg )
+    , subscriptions : frontendModel -> Sub msg
+    , onUrlRequest : Browser.UrlRequest -> msg
+    , onUrlChange : Url.Url -> msg
     }
-    -> FrontendProgram model toFrontend frontendMsg
-frontend =
-    Lamdera.frontend
-
-
-frontend2 params =
+    -> FrontendProgram frontendModel toFrontend msg
+frontend params =
     Lamdera.frontend
         { init =
             \url key -> mapUpdate <| params.init url key

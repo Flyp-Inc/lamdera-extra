@@ -15,7 +15,7 @@ type alias Model =
 
 
 app =
-    L.frontend2
+    L.frontend
         { init = init
         , onUrlRequest = UrlClicked
         , onUrlChange = UrlChanged
