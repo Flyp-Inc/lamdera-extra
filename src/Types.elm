@@ -2,6 +2,7 @@ module Types exposing (..)
 
 import Browser
 import Browser.Navigation
+import L.Types
 import Time
 import Url
 
@@ -18,7 +19,7 @@ type alias BackendModel =
 
 
 type alias FrontendMsg =
-    ( Msg, Maybe Time.Posix )
+    L.Types.TimestampMsg Msg
 
 
 type Msg
@@ -32,7 +33,7 @@ type ToBackend
 
 
 type alias BackendMsg =
-    ( Bsg, Maybe Time.Posix )
+    L.Types.TimestampMsg Bsg
 
 
 type Bsg

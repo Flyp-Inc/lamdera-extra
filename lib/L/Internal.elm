@@ -1,8 +1,6 @@
 module L.Internal exposing
-    ( BackendProgram
-    , ClientId
+    ( ClientId
     , ClientSet
-    , FrontendProgram
     , SessionDict
     , SessionId
     , backend
@@ -22,6 +20,7 @@ import Browser
 import Browser.Navigation
 import Dict
 import Html
+import L.Types
 import Lamdera
 import Set
 import Task
@@ -83,40 +82,12 @@ broadcast =
     Lamdera.broadcast
 
 
-type alias FrontendProgram frontendModel toFrontend msg =
-    { init :
-        Lamdera.Url
-        -> Browser.Navigation.Key
-        -> ( frontendModel, Cmd ( msg, Maybe Time.Posix ) )
-    , onUrlChange : Url.Url -> ( msg, Maybe Time.Posix )
-    , onUrlRequest : Browser.UrlRequest -> ( msg, Maybe Time.Posix )
-    , subscriptions : frontendModel -> Sub ( msg, Maybe Time.Posix )
-    , update :
-        ( msg, Maybe Time.Posix )
-        -> frontendModel
-        -> ( frontendModel, Cmd ( msg, Maybe Time.Posix ) )
-    , updateFromBackend :
-        toFrontend
-        -> frontendModel
-        -> ( frontendModel, Cmd ( msg, Maybe Time.Posix ) )
-    , view : frontendModel -> Browser.Document ( msg, Maybe Time.Posix )
-    }
-
-
-frontend :
-    { init : Lamdera.Url -> Browser.Navigation.Key -> ( frontendModel, Cmd msg )
-    , view : frontendModel -> Browser.Document msg
-    , update : Time.Posix -> msg -> frontendModel -> ( frontendModel, Cmd msg )
-    , updateFromBackend : toFrontend -> frontendModel -> ( frontendModel, Cmd msg )
-    , subscriptions : frontendModel -> Sub msg
-    , onUrlRequest : Browser.UrlRequest -> msg
-    , onUrlChange : Url.Url -> msg
-    }
-    -> FrontendProgram frontendModel toFrontend msg
 frontend params =
     Lamdera.frontend
         { init =
-            \url key -> mapUpdate <| params.init url key
+            \url key ->
+                params.init url key
+                    |> Tuple.mapSecond (Cmd.map L.Types.GotMsg)
         , view =
             \model ->
                 params.view model
@@ -124,81 +95,55 @@ frontend params =
                             { title = title
                             , body =
                                 List.map
-                                    (Html.map mapMsg)
+                                    (Html.map L.Types.GotMsg)
                                     body
                             }
                        )
-        , update =
-            \( msg, maybeTimestamp ) model ->
-                case maybeTimestamp of
-                    Nothing ->
-                        ( model
-                        , Task.perform (\timestamp -> Just timestamp |> Tuple.pair msg) Time.now
-                        )
-
-                    Just timestamp ->
-                        params.update timestamp msg model
-                            |> mapUpdate
+        , update = updateWithTimestamp params.update
         , updateFromBackend =
             \toFrontend model ->
                 params.updateFromBackend toFrontend model
-                    |> mapUpdate
+                    |> Tuple.mapSecond (Cmd.map L.Types.GotMsg)
         , subscriptions =
             \model ->
                 params.subscriptions model
-                    |> mapSub
+                    |> Sub.map L.Types.GotMsg
         , onUrlRequest =
-            \value -> params.onUrlRequest value |> mapMsg
+            \value -> params.onUrlRequest value |> L.Types.GotMsg
         , onUrlChange =
-            \value -> params.onUrlChange value |> mapMsg
+            \value -> params.onUrlChange value |> L.Types.GotMsg
         }
 
 
-type alias BackendProgram backendModel toBackend bsg =
-    { init : ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
-    , subscriptions : backendModel -> Sub ( bsg, Maybe Time.Posix )
-    , update :
-        ( bsg, Maybe Time.Posix )
-        -> backendModel
-        -> ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
-    , updateFromFrontend :
-        Lamdera.SessionId
-        -> Lamdera.ClientId
-        -> toBackend
-        -> backendModel
-        -> ( backendModel, Cmd ( bsg, Maybe Time.Posix ) )
-    }
+updateWithTimestamp :
+    (Time.Posix -> msg -> model -> ( model, Cmd msg ))
+    -> L.Types.TimestampMsg msg
+    -> model
+    -> ( model, Cmd (L.Types.TimestampMsg msg) )
+updateWithTimestamp func timestampMsg model =
+    case timestampMsg of
+        L.Types.GotMsg msg ->
+            ( model
+            , Task.perform (L.Types.GotMsgWithTimestamp msg) Time.now
+            )
+
+        L.Types.GotMsgWithTimestamp msg timestamp ->
+            func timestamp msg model
+                |> Tuple.mapSecond (Cmd.map L.Types.GotMsg)
 
 
-backend :
-    { init : ( backendModel, Cmd bsg )
-    , update : Time.Posix -> bsg -> backendModel -> ( backendModel, Cmd bsg )
-    , updateFromFrontend : SessionId -> ClientId -> toBackend -> backendModel -> ( backendModel, Cmd bsg )
-    , subscriptions : backendModel -> Sub bsg
-    }
-    -> BackendProgram backendModel toBackend bsg
 backend params =
     Lamdera.backend
-        { init = mapUpdate params.init
-        , update =
-            \( msg, maybeTimestamp ) model ->
-                case maybeTimestamp of
-                    Nothing ->
-                        ( model
-                        , Task.perform (\timestamp -> Just timestamp |> Tuple.pair msg) Time.now
-                        )
-
-                    Just timestamp ->
-                        params.update timestamp msg model
-                            |> mapUpdate
+        { init = params.init |> Tuple.mapSecond (Cmd.map L.Types.GotMsg)
+        , update = updateWithTimestamp params.update
         , updateFromFrontend =
             \sessionId clientId toBackend model ->
                 params.updateFromFrontend (newSessionId sessionId) (newClientId clientId) toBackend model
-                    |> mapUpdate
+                    |> Tuple.mapSecond (Cmd.map L.Types.GotMsg)
         , subscriptions =
             \model ->
                 params.subscriptions model
-                    |> mapSub
+                    |> Sub.map L.Types.GotMsg
         }
 
 
@@ -220,27 +165,3 @@ mapClientSet : (ClientId -> a) -> ClientSet -> List a
 mapClientSet f value =
     toListClientSet value
         |> List.map f
-
-
-
--- internals : message mapping
-
-
-mapMsg : msg -> ( msg, Maybe Time.Posix )
-mapMsg msg_ =
-    Tuple.pair msg_ Nothing
-
-
-mapSub : Sub msg -> Sub ( msg, Maybe Time.Posix )
-mapSub =
-    Sub.map mapMsg
-
-
-mapCmd : Cmd msg -> Cmd ( msg, Maybe Time.Posix )
-mapCmd =
-    Cmd.map mapMsg
-
-
-mapUpdate : ( model, Cmd msg ) -> ( model, Cmd ( msg, Maybe Time.Posix ) )
-mapUpdate =
-    Tuple.mapSecond mapCmd
