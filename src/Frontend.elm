@@ -67,9 +67,6 @@ update now msg model =
         UrlChanged _ ->
             ( model, Cmd.none )
 
-        NoOpFrontendMsg ->
-            ( model, Cmd.none )
-
         GotCounterMsg counterMsg ->
             counter.update now counterMsg model
 
@@ -77,9 +74,6 @@ update now msg model =
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd Msg )
 updateFromBackend msg model =
     case msg of
-        NoOpToFrontend ->
-            ( model, Cmd.none )
-
         CounterToFrontend toF ->
             counter.updateFromBackend toF model
 

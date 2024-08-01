@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "review": "elm-review --watch --fix-all --template jfmengels/elm-review-unused/example"
+    "review": "elm-review --watch --fix-all"
   },
   "keywords": [],
   "author": "",

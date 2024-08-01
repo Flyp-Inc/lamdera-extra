@@ -4,7 +4,6 @@ import Browser
 import Browser.Navigation
 import Counter
 import L.Types
-import Time
 import Url
 
 
@@ -28,7 +27,6 @@ type alias FrontendMsg =
 type Msg
     = UrlClicked Browser.UrlRequest
     | UrlChanged Url.Url
-    | NoOpFrontendMsg
     | GotCounterMsg Counter.Msg
 
 
@@ -42,10 +40,8 @@ type alias BackendMsg =
 
 
 type Bsg
-    = NoOp
-    | GotCounterBsg Counter.Bsg
+    = GotCounterBsg Counter.Bsg
 
 
 type ToFrontend
-    = NoOpToFrontend
-    | CounterToFrontend Counter.ToFrontend
+    = CounterToFrontend Counter.ToFrontend

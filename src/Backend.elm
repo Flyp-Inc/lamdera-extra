@@ -43,9 +43,6 @@ init =
 update : Time.Posix -> Bsg -> Model -> ( Model, Cmd Bsg )
 update timestamp msg model =
     case msg of
-        NoOp ->
-            ( model, Cmd.none )
-
         GotCounterBsg counterMsg ->
             counter.bupdate timestamp counterMsg model
 
