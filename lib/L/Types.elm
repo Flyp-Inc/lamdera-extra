@@ -1,4 +1,4 @@
-module L.Types exposing (..)
+module L.Types exposing (TimestampMsg(..))
 
 import Time
 

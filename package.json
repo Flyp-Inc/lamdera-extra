@@ -1,0 +1,15 @@
+{
+  "name": "lamdera-extra",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "review": "elm-review --watch --fix-all --template jfmengels/elm-review-unused/example"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "elm-review": "^2.12.0"
+  }
+}

@@ -4,20 +4,13 @@ module L.Internal exposing
     , SessionDict
     , SessionId
     , backend
-    , broadcast
     , frontend
     , mapClientSet
-    , newClientId
-    , newSessionId
-    , onConnect
-    , onDisconnect
     , sendToBackend
     , sendToFrontend
     , toListClientSet
     )
 
-import Browser
-import Browser.Navigation
 import Dict
 import Html
 import L.Types
@@ -25,7 +18,6 @@ import Lamdera
 import Set
 import Task
 import Time
-import Url
 
 
 type alias SessionId =
@@ -54,32 +46,12 @@ newClientId value =
     }
 
 
-onConnect : (SessionId -> ClientId -> toBackend) -> Sub toBackend
-onConnect toBackend =
-    Lamdera.onConnect
-        (\sessionId clientId ->
-            toBackend (newSessionId sessionId) (newClientId clientId)
-        )
-
-
-onDisconnect : (SessionId -> ClientId -> toBackend) -> Sub toBackend
-onDisconnect toBackend =
-    Lamdera.onDisconnect
-        (\sessionId clientId ->
-            toBackend (newSessionId sessionId) (newClientId clientId)
-        )
-
-
 sendToBackend =
     Lamdera.sendToBackend
 
 
 sendToFrontend clientId =
     Lamdera.sendToFrontend clientId.value
-
-
-broadcast =
-    Lamdera.broadcast
 
 
 frontend params =

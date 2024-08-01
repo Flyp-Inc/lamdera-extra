@@ -1,4 +1,4 @@
-module Frontend exposing (..)
+module Frontend exposing (Model, app)
 
 import Browser
 import Browser.Navigation
@@ -22,7 +22,7 @@ app =
         , onUrlChange = UrlChanged
         , update = update
         , updateFromBackend = updateFromBackend
-        , subscriptions = \m -> Sub.none
+        , subscriptions = \_ -> Sub.none
         , view = view
         }
 
@@ -64,7 +64,7 @@ update now msg model =
                     , Browser.Navigation.load url
                     )
 
-        UrlChanged url ->
+        UrlChanged _ ->
             ( model, Cmd.none )
 
         NoOpFrontendMsg ->

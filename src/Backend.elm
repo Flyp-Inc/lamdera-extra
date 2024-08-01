@@ -1,9 +1,7 @@
-module Backend exposing (..)
+module Backend exposing (Model, app)
 
 import Counter
-import Html
 import L
-import Task
 import Time
 import Types exposing (..)
 

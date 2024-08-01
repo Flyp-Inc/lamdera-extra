@@ -5,6 +5,7 @@ module Counter exposing
     , Frontend
     , Model
     , Msg
+    , Operation
     , ToBackend
     , ToFrontend
     , backend
