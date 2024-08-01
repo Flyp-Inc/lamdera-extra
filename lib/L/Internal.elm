@@ -6,8 +6,11 @@ module L.Internal exposing
     , SessionDict
     , SessionId
     , backend
+    , broadcast
     , frontend
     , mapClientSet
+    , onConnect
+    , onDisconnect
     , sendToBackend
     , sendToFrontend
     , toListClientSet
@@ -53,6 +56,26 @@ sendToBackend =
 
 sendToFrontend clientId =
     Lamdera.sendToFrontend clientId.value
+
+
+onConnect : (SessionId -> ClientId -> toBackend) -> Sub toBackend
+onConnect toBackend =
+    Lamdera.onConnect
+        (\sessionId clientId ->
+            toBackend (newSessionId sessionId) (newClientId clientId)
+        )
+
+
+onDisconnect : (SessionId -> ClientId -> toBackend) -> Sub toBackend
+onDisconnect toBackend =
+    Lamdera.onDisconnect
+        (\sessionId clientId ->
+            toBackend (newSessionId sessionId) (newClientId clientId)
+        )
+
+
+broadcast =
+    Lamdera.broadcast
 
 
 type alias FrontendApplication toFrontend model msg =

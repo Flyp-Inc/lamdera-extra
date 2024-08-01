@@ -2,7 +2,7 @@ module L exposing
     ( SessionId, ClientId
     , FrontendApplication, frontend
     , BackendApplication, backend
-    , sendToBackend, sendToFrontend
+    , sendToBackend, sendToFrontend, onConnect, onDisconnect, broadcast, sendToClients
     , SessionDict, ClientSet
     )
 
@@ -14,7 +14,7 @@ module L exposing
 
 @docs BackendApplication, backend
 
-@docs sendToBackend, sendToFrontend
+@docs sendToBackend, sendToFrontend, onConnect, onDisconnect, broadcast, sendToClients
 
 @docs SessionDict, ClientSet
 
@@ -39,16 +39,48 @@ type alias ClientId =
     L.Internal.ClientId
 
 
-{-| `L.`-namespaced implementation of `sendToBackend`
+{-| `L.`-namespaced implementation of `Lamdera.sendToBackend`
 -}
 sendToBackend =
     L.Internal.sendToBackend
 
 
-{-| `L.`-namespaced implementation of `sendToFrontend` that uses a `L.ClientId` instead of a `Lamdera.ClientId`
+{-| `L.`-namespaced implementation of `Lamdera.sendToFrontend` that uses a `L.ClientId` instead of a `Lamdera.ClientId`
 -}
 sendToFrontend =
     L.Internal.sendToFrontend
+
+
+{-| `L.`-namespaced implementation of `Lamdera.onConnect` that uses `L.SessionId` and `L.ClientId`
+-}
+onConnect : (SessionId -> ClientId -> toBackend) -> Sub toBackend
+onConnect =
+    L.Internal.onConnect
+
+
+{-| `L.`-namespaced implementation of `Lamdera.onDisconnect` that uses `L.SessionId` and `L.ClientId`
+-}
+onDisconnect : (SessionId -> ClientId -> toBackend) -> Sub toBackend
+onDisconnect =
+    L.Internal.onDisconnect
+
+
+{-| `L.`-namespaced implementation of `Lamdera.broadcast`
+-}
+broadcast =
+    L.Internal.broadcast
+
+
+{-| Like `Lamdera.broadcast`, but only for a certain subset of connected clients; useful if you want to - for instance - push authentication state
+to all connected clients for a given session
+-}
+sendToClients clientIds toFrontend =
+    Cmd.batch <|
+        L.Internal.mapClientSet
+            (\clientId ->
+                sendToFrontend clientId toFrontend
+            )
+            clientIds
 
 
 {-| Type signature for a frontend application
