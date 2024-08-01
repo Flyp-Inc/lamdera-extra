@@ -20,6 +20,12 @@ I've also included a demonstration of how to bring ["The Module Pattern"](https:
 
 Yeah, just hit `lamdera live`.
 
+## Can I use this?
+
+Sure, but I'm using this as a base for a product right now, so I'm going to push to `master` whenever I feel the need to do so; you may want to pin your submodule to a SHA that you're happy with, and roll back if I update something in here that breaks your stuff.
+
+If you have any questions, you can catch me as `@lambdapriest` on the [Lamdera Discord](https://dashboard.lamdera.app/docs/discuss).
+
 ## Usage
 
 To use `lamdera-extra` in your own Lamdera application:
