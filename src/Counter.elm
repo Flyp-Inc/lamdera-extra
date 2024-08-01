@@ -1,4 +1,15 @@
-module Counter exposing (..)
+module Counter exposing
+    ( Backend
+    , Bodel
+    , Bsg
+    , Frontend
+    , Model
+    , Msg
+    , ToBackend
+    , ToFrontend
+    , backend
+    , frontend
+    )
 
 import Html
 import Html.Attributes as Attr
