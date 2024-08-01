@@ -12,6 +12,47 @@ module Counter exposing
     , frontend
     )
 
+{-| Implementation of ["the module pattern"](https://dev.to/jmpavlick/for-lack-of-a-better-name-im-calling-it-the-module-pattern-5dfi), applied to a Lamdera application.
+
+This isn't actually a part of `lamdera-extra` so much as it is a demonstration of the technique.
+
+"The Module Pattern" allows us to constrain behaviors to a given module and make them opaque to the rest of the application,
+while making it extremely clear what information is being processed by the behaviors encapsulated within a given module.
+
+The overall premise is this:
+
+  - Create a record type alias that defines the interfaces for a TEA-like group of functions
+  - Create a function that takes any external maps, and applies them to the internal definitions of those functions as arguments, and returns a value of that "interface" type
+  - Any other part of the application can "host" that "module" as long as it can satisfy the dependencies created by the type signature of the initialization function
+
+In this file, we define the following TEA / Lamdera application standards:
+
+  - view
+  - frontend update
+  - backend update
+  - update from backend
+  - update from frontend
+  - frontend model
+  - backend model
+
+We treat every message and model type in this module as if it were a top-level type, in its respective `Frontend.elm` or `Backend.elm` file,
+and in so doing, we can write 100 of our code within the immediate context of those types, leveraging the `frontend` and `backend` initialization functions
+to mediate all of these types and functions' interactions with the rest of the application.
+
+The overall "flow" of events in this module works like this:
+
+  - The frontend displays its model (which contains an integer representing a count), and buttons to increment and decrement that count
+  - The frontend update sends a message to the backend's "update from frontend" function that includes the event, as well as client and session information
+  - The "update from frontend" function records the message's event payload as an "event" (as in "event sourcing") in the backend model, and sends
+    a message to the backend's update, notifying it that a value was persisted and communicating which client was responsible for persisting the change
+  - The backend update function aggregates its model into a value representing (number of times incremented) minus (number of times decremented), and sends
+    a message to the "update from backend" function on the frontend
+  - The "update from backend" function on the frontend persists this new value into the frontend's model, where it can be viewed
+
+Take a look at the call sites in `Frontend.elm` and `Backend.elm` for more insight as to how this all fits together!
+
+-}
+
 import Html
 import Html.Attributes as Attr
 import Html.Events
