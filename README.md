@@ -6,6 +6,14 @@ The rationale behind this repository existing in the first place, is that we wan
 
 This makes it easy for [John](https://github.com/jmpavlick) to prototype with platform-level ideas, without breaking the whole application a hundred times between iterations on some unhinged long-shot that may or may not even work out.
 
+## What's it do, what is going on here?
+
+- You get a fresh `Time.Posix` timestamp in-scope in `Frontend.update` and `Backend.update`
+  - This makes it easy to do stuff like "put a timestamp on some value that's being persisted in the `BackendModel`
+- `Lamdera.SessionId` and `Lamdera.ClientId` are wrapped in types `L.SessionId` and `L.ClientId` so that you don't mix them up and footgun yourself
+- `L.SessionDict`: a dictionary that uses our `L.SessionId` type as a key
+- `L.ClientSet`: a set that can contain `L.ClientId` values
+
 ## Does it even run?
 
 Yeah, just hit `lamdera live`.
