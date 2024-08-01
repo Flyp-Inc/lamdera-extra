@@ -45,3 +45,10 @@ type Bsg
 
 type ToFrontend
     = CounterToFrontend Counter.ToFrontend
+
+
+andUpdate : ( a, Cmd msg ) -> ( a -> b, Cmd msg ) -> ( b, Cmd msg )
+andUpdate ( value, cmd2 ) ( func, cmd1 ) =
+    ( func value
+    , Cmd.batch [ cmd1, cmd2 ]
+    )

@@ -42,12 +42,14 @@ counter =
 
 init : Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init url key =
-    ( { key = key
-      , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation, with some added topspin from an unhinged community member."
-      , counterModel = Tuple.first counter.init
-      }
+    ( \counterModel ->
+        { key = key
+        , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation, with some added topspin from an unhinged community member."
+        , counterModel = counterModel
+        }
     , Cmd.none
     )
+        |> Types.andUpdate counter.init
 
 
 update : Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )

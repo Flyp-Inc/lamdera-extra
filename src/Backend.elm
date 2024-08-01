@@ -34,11 +34,13 @@ counter =
 
 init : ( Bodel, Cmd Bsg )
 init =
-    ( { message = "Hello!"
-      , counterBodel = Tuple.first counter.binit
-      }
+    ( \counterBodel ->
+        { message = "Hello!"
+        , counterBodel = counterBodel
+        }
     , Cmd.none
     )
+        |> Types.andUpdate counter.binit
 
 
 update : Time.Posix -> Bsg -> Bodel -> ( Bodel, Cmd Bsg )

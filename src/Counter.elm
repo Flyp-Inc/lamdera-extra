@@ -84,6 +84,7 @@ type ToFrontend
 
 type ToBackend
     = HandledChanged Operation Time.Posix
+    | RequestedState
 
 
 type Bsg
@@ -120,7 +121,7 @@ frontend { toMsg, sendToBackend, toModel, fromModel } =
                 |> Tuple.mapFirst (toModel model)
     , init =
         ( { count = 0 }
-        , Cmd.none
+        , sendToBackend RequestedState
         )
     }
 
@@ -188,10 +189,12 @@ updateFromFrontend toBsg toBackend sessionId clientId bodel =
     case toBackend of
         HandledChanged operation timestamp ->
             ( { bodel | operations = ( operation, timestamp ) :: bodel.operations }
-            , Cmd.map toBsg <|
-                Task.perform identity <|
-                    Task.succeed <|
-                        OnSaved clientId
+            , Task.perform toBsg <| Task.succeed (OnSaved clientId)
+            )
+
+        RequestedState ->
+            ( bodel
+            , Task.perform toBsg <| Task.succeed (OnSaved clientId)
             )
 
 
