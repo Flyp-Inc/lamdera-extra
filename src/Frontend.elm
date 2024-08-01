@@ -2,6 +2,7 @@ module Frontend exposing (..)
 
 import Browser
 import Browser.Navigation
+import Counter
 import Html
 import Html.Attributes as Attr
 import L
@@ -26,10 +27,23 @@ app =
         }
 
 
+counter : Counter.Frontend Model Msg
+counter =
+    Counter.frontend
+        { toMsg = GotCounterMsg
+        , sendToBackend =
+            \toBackend ->
+                L.sendToBackend (CounterToBackend toBackend)
+        , toModel = \model counterModel -> { model | counterModel = counterModel }
+        , fromModel = .counterModel
+        }
+
+
 init : Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation, with some added topspin from an unhinged community member."
+      , counterModel = Tuple.first counter.init
       }
     , Cmd.none
     )
@@ -56,12 +70,18 @@ update now msg model =
         NoOpFrontendMsg ->
             ( model, Cmd.none )
 
+        GotCounterMsg counterMsg ->
+            counter.update now counterMsg model
+
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd Msg )
 updateFromBackend msg model =
     case msg of
         NoOpToFrontend ->
             ( model, Cmd.none )
+
+        CounterToFrontend toF ->
+            counter.updateFromBackend toF model
 
 
 view : Model -> Browser.Document Msg
@@ -88,6 +108,8 @@ view model =
                     , Html.code [] [ Html.text "elm.json" ]
                     ]
                 ]
+            , Html.hr [] []
+            , counter.view model
             ]
         ]
     }

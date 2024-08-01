@@ -2,6 +2,7 @@ module Types exposing (..)
 
 import Browser
 import Browser.Navigation
+import Counter
 import L.Types
 import Time
 import Url
@@ -10,11 +11,13 @@ import Url
 type alias FrontendModel =
     { key : Browser.Navigation.Key
     , message : String
+    , counterModel : Counter.Model
     }
 
 
 type alias BackendModel =
     { message : String
+    , counterBodel : Counter.Bodel
     }
 
 
@@ -26,10 +29,12 @@ type Msg
     = UrlClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | NoOpFrontendMsg
+    | GotCounterMsg Counter.Msg
 
 
 type ToBackend
     = NoOpToBackend
+    | CounterToBackend Counter.ToBackend
 
 
 type alias BackendMsg =
@@ -38,7 +43,9 @@ type alias BackendMsg =
 
 type Bsg
     = NoOp
+    | GotCounterBsg Counter.Bsg
 
 
 type ToFrontend
     = NoOpToFrontend
+    | CounterToFrontend Counter.ToFrontend
