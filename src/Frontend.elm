@@ -15,6 +15,7 @@ type alias Model =
     FrontendModel
 
 
+app : L.FrontendApplication ToFrontend Model Msg
 app =
     L.frontend
         { init = init

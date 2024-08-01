@@ -1,6 +1,8 @@
 module L.Internal exposing
-    ( ClientId
+    ( BackendApplication
+    , ClientId
     , ClientSet
+    , FrontendApplication
     , SessionDict
     , SessionId
     , backend
@@ -11,6 +13,14 @@ module L.Internal exposing
     , toListClientSet
     )
 
+{-| INTERNALS. STAY OUT.
+
+(just kidding. honestly, if you like this, you should probably fork it and customize it for your own application!)
+
+-}
+
+import Browser
+import Browser.Navigation
 import Dict
 import Html
 import L.Types
@@ -18,6 +28,11 @@ import Lamdera
 import Set
 import Task
 import Time
+import Url
+
+
+
+-- exposed internals
 
 
 type alias SessionId =
@@ -26,23 +41,9 @@ type alias SessionId =
     }
 
 
-newSessionId : Lamdera.SessionId -> SessionId
-newSessionId value =
-    { value = value
-    , tag = ()
-    }
-
-
 type alias ClientId =
     { value : Lamdera.ClientId
     , tag : {}
-    }
-
-
-newClientId : Lamdera.ClientId -> ClientId
-newClientId value =
-    { value = value
-    , tag = {}
     }
 
 
@@ -54,6 +55,34 @@ sendToFrontend clientId =
     Lamdera.sendToFrontend clientId.value
 
 
+type alias FrontendApplication toFrontend model msg =
+    { init :
+        Lamdera.Url
+        -> Browser.Navigation.Key
+        -> ( model, Cmd (L.Types.TimestampMsg msg) )
+    , onUrlChange : Url.Url -> L.Types.TimestampMsg msg
+    , onUrlRequest : Browser.UrlRequest -> L.Types.TimestampMsg msg
+    , subscriptions : model -> Sub (L.Types.TimestampMsg msg)
+    , update :
+        L.Types.TimestampMsg msg
+        -> model
+        -> ( model, Cmd (L.Types.TimestampMsg msg) )
+    , updateFromBackend :
+        toFrontend -> model -> ( model, Cmd (L.Types.TimestampMsg msg) )
+    , view : model -> Browser.Document (L.Types.TimestampMsg msg)
+    }
+
+
+frontend :
+    { init : Url.Url -> Browser.Navigation.Key -> ( model, Cmd msg )
+    , view : model -> Browser.Document msg
+    , update : Time.Posix -> msg -> model -> ( model, Cmd msg )
+    , updateFromBackend : toFrontend -> model -> ( model, Cmd msg )
+    , subscriptions : model -> Sub msg
+    , onUrlRequest : Browser.UrlRequest -> msg
+    , onUrlChange : Url.Url -> msg
+    }
+    -> FrontendApplication toFrontend model msg
 frontend params =
     Lamdera.frontend
         { init =
@@ -104,6 +133,29 @@ updateWithTimestamp func timestampMsg model =
                 |> Tuple.mapSecond (Cmd.map L.Types.GotMsg)
 
 
+type alias BackendApplication toBackend bodel bsg =
+    { init : ( bodel, Cmd (L.Types.TimestampMsg bsg) )
+    , subscriptions : bodel -> Sub (L.Types.TimestampMsg bsg)
+    , update :
+        L.Types.TimestampMsg bsg
+        -> bodel
+        -> ( bodel, Cmd (L.Types.TimestampMsg bsg) )
+    , updateFromFrontend :
+        Lamdera.SessionId
+        -> Lamdera.ClientId
+        -> toBackend
+        -> bodel
+        -> ( bodel, Cmd (L.Types.TimestampMsg bsg) )
+    }
+
+
+backend :
+    { init : ( bodel, Cmd bsg )
+    , update : Time.Posix -> bsg -> bodel -> ( bodel, Cmd bsg )
+    , updateFromFrontend : SessionId -> ClientId -> toBackend -> bodel -> ( bodel, Cmd bsg )
+    , subscriptions : bodel -> Sub bsg
+    }
+    -> BackendApplication toBackend bodel bsg
 backend params =
     Lamdera.backend
         { init = params.init |> Tuple.mapSecond (Cmd.map L.Types.GotMsg)
@@ -137,3 +189,21 @@ mapClientSet : (ClientId -> a) -> ClientSet -> List a
 mapClientSet f value =
     toListClientSet value
         |> List.map f
+
+
+
+-- actually-internal internals
+
+
+newSessionId : Lamdera.SessionId -> SessionId
+newSessionId value =
+    { value = value
+    , tag = ()
+    }
+
+
+newClientId : Lamdera.ClientId -> ClientId
+newClientId value =
+    { value = value
+    , tag = {}
+    }

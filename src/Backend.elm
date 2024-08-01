@@ -1,4 +1,4 @@
-module Backend exposing (Model, app)
+module Backend exposing (Bodel, app)
 
 import Counter
 import L
@@ -6,10 +6,11 @@ import Time
 import Types exposing (..)
 
 
-type alias Model =
+type alias Bodel =
     BackendModel
 
 
+app : L.BackendApplication ToBackend Bodel Bsg
 app =
     L.backend
         { init = init
@@ -19,7 +20,7 @@ app =
         }
 
 
-counter : Counter.Backend Model Bsg
+counter : Counter.Backend Bodel Bsg
 counter =
     Counter.backend
         { toBsg = GotCounterBsg
@@ -31,7 +32,7 @@ counter =
         }
 
 
-init : ( Model, Cmd Bsg )
+init : ( Bodel, Cmd Bsg )
 init =
     ( { message = "Hello!"
       , counterBodel = Tuple.first counter.binit
@@ -40,14 +41,14 @@ init =
     )
 
 
-update : Time.Posix -> Bsg -> Model -> ( Model, Cmd Bsg )
+update : Time.Posix -> Bsg -> Bodel -> ( Bodel, Cmd Bsg )
 update timestamp msg model =
     case msg of
         GotCounterBsg counterMsg ->
             counter.bupdate timestamp counterMsg model
 
 
-updateFromFrontend : L.SessionId -> L.ClientId -> ToBackend -> Model -> ( Model, Cmd Bsg )
+updateFromFrontend : L.SessionId -> L.ClientId -> ToBackend -> Bodel -> ( Bodel, Cmd Bsg )
 updateFromFrontend sessionId clientId msg model =
     case msg of
         NoOpToBackend ->
