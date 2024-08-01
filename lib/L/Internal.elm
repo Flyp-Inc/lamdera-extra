@@ -116,23 +116,6 @@ frontend params =
         }
 
 
-updateWithTimestamp :
-    (Time.Posix -> msg -> model -> ( model, Cmd msg ))
-    -> L.Types.TimestampMsg msg
-    -> model
-    -> ( model, Cmd (L.Types.TimestampMsg msg) )
-updateWithTimestamp func timestampMsg model =
-    case timestampMsg of
-        L.Types.GotMsg msg ->
-            ( model
-            , Task.perform (L.Types.GotMsgWithTimestamp msg) Time.now
-            )
-
-        L.Types.GotMsgWithTimestamp msg timestamp ->
-            func timestamp msg model
-                |> Tuple.mapSecond (Cmd.map L.Types.GotMsg)
-
-
 type alias BackendApplication toBackend bodel bsg =
     { init : ( bodel, Cmd (L.Types.TimestampMsg bsg) )
     , subscriptions : bodel -> Sub (L.Types.TimestampMsg bsg)
@@ -207,3 +190,20 @@ newClientId value =
     { value = value
     , tag = {}
     }
+
+
+updateWithTimestamp :
+    (Time.Posix -> msg -> model -> ( model, Cmd msg ))
+    -> L.Types.TimestampMsg msg
+    -> model
+    -> ( model, Cmd (L.Types.TimestampMsg msg) )
+updateWithTimestamp func timestampMsg model =
+    case timestampMsg of
+        L.Types.GotMsg msg ->
+            ( model
+            , Task.perform (L.Types.GotMsgWithTimestamp msg) Time.now
+            )
+
+        L.Types.GotMsgWithTimestamp msg timestamp ->
+            func timestamp msg model
+                |> Tuple.mapSecond (Cmd.map L.Types.GotMsg)
