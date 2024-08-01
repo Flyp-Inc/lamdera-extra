@@ -14,6 +14,8 @@ This makes it easy for [John](https://github.com/jmpavlick) to prototype with pl
 - `L.SessionDict`: a dictionary that uses our `L.SessionId` type as a key
 - `L.ClientSet`: a set that can contain `L.ClientId` values
 
+I've also included a demonstration of how to bring ["The Module Pattern"](https://dev.to/jmpavlick/for-lack-of-a-better-name-im-calling-it-the-module-pattern-5dfi) into Lamdera, in `./src/Counter.elm`.
+
 ## Does it even run?
 
 Yeah, just hit `lamdera live`.
@@ -41,5 +43,6 @@ lamdera install elm/time
 
 ### Phase 2: Start using it
 
+- Read the docs: There are lots of doc comments in the modules within `./lib`, as well as in `Counter.elm`.
 - Replace all existing references to `import Lamdera` with `import L`
 - Follow the compiler and update your types accordingly
