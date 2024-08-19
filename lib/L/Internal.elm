@@ -4,6 +4,7 @@ module L.Internal exposing
     , ClientSet
     , FrontendApplication
     , SessionDict
+    , SessionDict_
     , SessionId
     , backend
     , broadcast
@@ -175,6 +176,12 @@ backend params =
                 params.subscriptions model
                     |> Sub.map L.Types.GotMsg
         }
+
+
+type alias SessionDict_ value =
+    { sessions : Dict.Dict Lamdera.SessionId value
+    , clients : Dict.Dict Lamdera.ClientId Lamdera.SessionId
+    }
 
 
 type alias SessionDict value =
