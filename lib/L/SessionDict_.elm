@@ -1,4 +1,4 @@
-module L.SessionDict_ exposing (..)
+module L.SessionDict_ exposing (SessionDict, empty, filter, get, onConnect, onDisconnect, update)
 
 import Dict
 import L.Internal as L
