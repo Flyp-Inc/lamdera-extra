@@ -3,7 +3,7 @@ module L exposing
     , FrontendApplication, frontend
     , BackendApplication, backend
     , sendToBackend, sendToFrontend, onConnect, onDisconnect, broadcast, sendToClients
-    , SessionDict_, SessionDict, ClientSet
+    , SessionDict, ClientSet
     )
 
 {-| You don't `import Lamdera` anymore; you just `import L`.
@@ -16,7 +16,7 @@ module L exposing
 
 @docs sendToBackend, sendToFrontend, onConnect, onDisconnect, broadcast, sendToClients
 
-@docs SessionDict_, SessionDict, ClientSet
+@docs SessionDict, ClientSet
 
 -}
 
@@ -125,12 +125,6 @@ backend =
 
 
 {-| A dictionary to manage sessions; maintains a relationship between `L.SessionId` and `L.ClientId` and some `value`
--}
-type alias SessionDict_ value =
-    L.Internal.SessionDict_ value
-
-
-{-| A dictionary whose key is a `L.SessionId`
 -}
 type alias SessionDict value =
     L.Internal.SessionDict value

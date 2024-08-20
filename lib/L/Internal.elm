@@ -4,7 +4,6 @@ module L.Internal exposing
     , ClientSet
     , FrontendApplication
     , SessionDict
-    , SessionDict_
     , SessionId
     , backend
     , broadcast
@@ -178,14 +177,10 @@ backend params =
         }
 
 
-type alias SessionDict_ value =
+type alias SessionDict value =
     { sessions : Dict.Dict Lamdera.SessionId value
     , clients : Dict.Dict Lamdera.ClientId Lamdera.SessionId
     }
-
-
-type alias SessionDict value =
-    Dict.Dict Lamdera.SessionId value
 
 
 type alias ClientSet =

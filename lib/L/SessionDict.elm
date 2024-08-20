@@ -1,62 +1,66 @@
-module L.SessionDict exposing
-    ( SessionDict
-    , empty
-    , get
-    , insert, update, remove, filter
-    )
-
-{-| Dictionary operations for a dictionary with `L.SessionId` as the dictionary's key.
-
-@docs SessionDict
-
-@docs empty
-
-@docs get
-
-@docs insert, update, remove, filter
-
--}
+module L.SessionDict exposing (SessionDict, empty, filter, get, handleOnConnect, handleOnDisconnect, update)
 
 import Dict
 import L.Internal as L
+import Lamdera
 
 
-{-| -}
 type alias SessionDict value =
     L.SessionDict value
 
 
-{-| -}
-insert : L.SessionId -> value -> SessionDict value -> SessionDict value
-insert id =
-    Dict.insert id.value
-
-
-{-| -}
-update : L.SessionId -> (Maybe value -> Maybe value) -> SessionDict value -> SessionDict value
-update id =
-    Dict.update id.value
-
-
-{-| -}
-get : L.SessionId -> SessionDict value -> Maybe value
-get id =
-    Dict.get id.value
-
-
-{-| -}
-remove : L.SessionId -> SessionDict value -> SessionDict value
-remove id =
-    Dict.remove id.value
-
-
-{-| -}
 empty : SessionDict value
 empty =
-    Dict.empty
+    { sessions = Dict.empty
+    , clients = Dict.empty
+    }
 
 
-{-| -}
-filter : (value -> Bool) -> L.SessionDict value -> L.SessionDict value
-filter func =
-    Dict.filter (\_ value -> func value)
+handleOnConnect : value -> L.SessionId -> L.ClientId -> SessionDict value -> SessionDict value
+handleOnConnect default sessionId clientId dict =
+    { sessions =
+        Dict.update sessionId.value
+            (\maybeValue ->
+                Just <| Maybe.withDefault default maybeValue
+            )
+            dict.sessions
+    , clients =
+        Dict.insert clientId.value sessionId.value dict.clients
+    }
+
+
+handleOnDisconnect : L.ClientId -> SessionDict value -> SessionDict value
+handleOnDisconnect clientId dict =
+    { sessions = dict.sessions
+    , clients = Dict.remove clientId.value dict.clients
+    }
+
+
+get : L.ClientId -> SessionDict value -> Maybe value
+get clientId { sessions, clients } =
+    Dict.get clientId.value clients
+        |> Maybe.andThen
+            (\sessionId ->
+                Dict.get sessionId sessions
+            )
+
+
+update : L.ClientId -> value -> SessionDict value -> SessionDict value
+update clientId value ({ sessions, clients } as sessionDict) =
+    Dict.get clientId.value clients
+        |> Maybe.map
+            (\sessionId ->
+                { sessions =
+                    Dict.insert sessionId value sessions
+                , clients = Dict.insert clientId.value sessionId clients
+                }
+            )
+        |> Maybe.withDefault sessionDict
+
+
+filter : (value -> Bool) -> SessionDict value -> SessionDict value
+filter func { sessions, clients } =
+    { sessions =
+        Dict.filter (\_ value -> func value) sessions
+    , clients = clients
+    }
