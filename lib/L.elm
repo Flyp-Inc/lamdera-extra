@@ -124,7 +124,7 @@ backend =
     L.Internal.backend
 
 
-{-| A dictionary whose key is a `L.SessionId`
+{-| A dictionary to manage sessions; maintains a relationship between `L.SessionId` and `L.ClientId` and some `value`
 -}
 type alias SessionDict value =
     L.Internal.SessionDict value

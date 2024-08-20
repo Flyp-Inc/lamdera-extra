@@ -178,7 +178,9 @@ backend params =
 
 
 type alias SessionDict value =
-    Dict.Dict Lamdera.SessionId value
+    { sessions : Dict.Dict Lamdera.SessionId value
+    , clients : Dict.Dict Lamdera.ClientId Lamdera.SessionId
+    }
 
 
 type alias ClientSet =
