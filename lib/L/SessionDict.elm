@@ -16,17 +16,24 @@ empty =
     }
 
 
-handleOnConnect : value -> L.SessionId -> L.ClientId -> SessionDict value -> SessionDict value
+handleOnConnect : value -> L.SessionId -> L.ClientId -> SessionDict value -> ( value, SessionDict value )
 handleOnConnect default sessionId clientId dict =
-    { sessions =
-        Dict.update sessionId.value
-            (\maybeValue ->
-                Just <| Maybe.withDefault default maybeValue
-            )
-            dict.sessions
-    , clients =
-        Dict.insert clientId.value sessionId.value dict.clients
-    }
+    (\updatedDict ->
+        ( Dict.get sessionId.value updatedDict.sessions
+            |> Maybe.withDefault default
+        , updatedDict
+        )
+    )
+    <|
+        { sessions =
+            Dict.update sessionId.value
+                (\maybeValue ->
+                    Just <| Maybe.withDefault default maybeValue
+                )
+                dict.sessions
+        , clients =
+            Dict.insert clientId.value sessionId.value dict.clients
+        }
 
 
 handleOnDisconnect : L.ClientId -> SessionDict value -> SessionDict value
